@@ -1,0 +1,37 @@
+services:
+  galaxy-master:
+    image: bitnamilegacy/spark
+    container_name: galaxy-master
+    hostname: galaxy-master
+    ports:
+      - "8090:8080"
+      - "7077:7077"
+    restart: unless-stopped
+
+  galaxy-worker1:
+    image: bitnamilegacy/spark
+    container_name: galaxy-worker1
+    hostname: galaxy-worker1
+    depends_on:
+      - galaxy-master
+    command:
+      - /opt/bitnami/spark/bin/spark-class
+      - org.apache.spark.deploy.worker.Worker
+      - --host
+      - galaxy-worker1
+      - spark://galaxy-master:7077
+    restart: unless-stopped
+
+  galaxy-worker2:
+    image: bitnamilegacy/spark
+    container_name: galaxy-worker2
+    hostname: galaxy-worker2
+    depends_on:
+      - galaxy-master
+    command:
+      - /opt/bitnami/spark/bin/spark-class
+      - org.apache.spark.deploy.worker.Worker
+      - --host
+      - galaxy-worker2
+      - spark://galaxy-master:7077
+    restart: unless-stopped
