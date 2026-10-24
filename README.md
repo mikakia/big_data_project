@@ -1,9 +1,13 @@
-# Start cluster
+# 1. Cluster Setup
+
+## Start the cluster when it's already created
 docker start galaxy-master galaxy-worker1 galaxy-worker2
-# Check what is running 
+## Check what is running 
 docker ps
 
 # 2. Manual Data Splitting accross Nodes
+The manual split is done in 'split_data.py' where the data were splitted into 3 different csv files.
+The procedure to copy the files in the containers is as following: 
 ## Create a data folder on each node
 docker exec -u root galaxy-master mkdir -p /data
 docker exec -u root galaxy-worker1 mkdir -p /data
@@ -25,3 +29,5 @@ docker cp data/worker2/worker2.csv galaxy-worker2:/data/worker2.csv
 ### To check if the files were successfully copied
 docker exec <container name> ls -l /data
 
+# 3. Data loading on each node
+The data loading is done in 'load_data.py'
