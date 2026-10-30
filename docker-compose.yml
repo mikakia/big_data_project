@@ -1,37 +1,67 @@
 services:
   galaxy-master:
-    image: bitnamilegacy/spark
+    image: spark:python3
     container_name: galaxy-master
     hostname: galaxy-master
+    command: 
+      - /opt/spark/bin/spark-class
+      - org.apache.spark.deploy.master.Master
     ports:
       - "8090:8080"
       - "7077:7077"
+    volumes:
+      - ./data/master:/data
+      - ./:/opt/spark/work-dir
     restart: unless-stopped
 
   galaxy-worker1:
-    image: bitnamilegacy/spark
+    image: spark:python3
     container_name: galaxy-worker1
     hostname: galaxy-worker1
     depends_on:
       - galaxy-master
     command:
-      - /opt/bitnami/spark/bin/spark-class
+      - /opt/spark/bin/spark-class
       - org.apache.spark.deploy.worker.Worker
       - --host
       - galaxy-worker1
+      - --cores
+      - "2"
+      - --memory
+      - 2g
       - spark://galaxy-master:7077
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 3g
+    volumes:
+      - ./data/worker1:/data
+      - ./:/opt/spark/work-dir
     restart: unless-stopped
 
   galaxy-worker2:
-    image: bitnamilegacy/spark
+    image: spark:python3
     container_name: galaxy-worker2
     hostname: galaxy-worker2
     depends_on:
       - galaxy-master
     command:
-      - /opt/bitnami/spark/bin/spark-class
+      - /opt/spark/bin/spark-class
       - org.apache.spark.deploy.worker.Worker
       - --host
       - galaxy-worker2
+      - --cores
+      - "4"
+      - --memory
+      - 4g
       - spark://galaxy-master:7077
+    deploy:
+      resources:
+        limits:
+          cpus: "4"
+          memory: 5g
+    volumes:
+      - ./data/worker2:/data
+      - ./:/opt/spark/work-dir
     restart: unless-stopped
