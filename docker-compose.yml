@@ -1,8 +1,17 @@
+networks:
+  galaxy_network:
+
+volumes:
+  spark-events:
+  spark-logs:
+
 services:
   galaxy-master:
     image: spark:python3
     container_name: galaxy-master
     hostname: galaxy-master
+    networks:
+      - galaxy_network
     command: 
       - /opt/spark/bin/spark-class
       - org.apache.spark.deploy.master.Master
@@ -10,14 +19,18 @@ services:
       - "8090:8080"
       - "7077:7077"
     volumes:
+      - ./src:/opt/spark/work-dir/src:ro
+      - ./data:/opt/spark/work-dir/data
       - ./data/master:/data
-      - ./:/opt/spark/work-dir
+      - ./data/events:/opt/spark/events
     restart: unless-stopped
 
   galaxy-worker1:
     image: spark:python3
     container_name: galaxy-worker1
     hostname: galaxy-worker1
+    networks:
+      - galaxy_network
     depends_on:
       - galaxy-master
     command:
@@ -36,14 +49,18 @@ services:
           cpus: "2"
           memory: 3g
     volumes:
+      - ./src:/opt/spark/work-dir/src:ro
+      - ./data:/opt/spark/work-dir/data
       - ./data/worker1:/data
-      - ./:/opt/spark/work-dir
+      - ./data/events:/opt/spark/events
     restart: unless-stopped
 
   galaxy-worker2:
     image: spark:python3
     container_name: galaxy-worker2
     hostname: galaxy-worker2
+    networks:
+      - galaxy_network
     depends_on:
       - galaxy-master
     command:
@@ -62,6 +79,28 @@ services:
           cpus: "4"
           memory: 5g
     volumes:
+      - ./src:/opt/spark/work-dir/src:ro
+      - ./data:/opt/spark/work-dir/data
       - ./data/worker2:/data
-      - ./:/opt/spark/work-dir
+      - ./data/events:/opt/spark/events
     restart: unless-stopped
+
+  # History server
+  spark-history-server:
+    image: spark:python3
+    hostname: galaxy-history
+    container_name: galaxy-history
+    networks:
+      - galaxy_network
+    command: 
+      - /opt/spark/bin/spark-class
+      - org.apache.spark.deploy.history.HistoryServer
+    environment:
+      SPARK_HISTORY_OPTS: "-Dspark.history.fs.logDirectory=file:/opt/spark/events"
+    ports:
+      - 18080:18080
+    volumes:
+      - ./data/events:/opt/spark/events
+      - spark-logs:/opt/spark/logs
+    restart: unless-stopped
+  

@@ -1,5 +1,5 @@
 # 1. Cluster Setup
-The docker compose file contains volumes so that each cluster has its own data folder.
+The docker compose file contains volumes so that each cluster has its own data folder. It also creates a history server that shows event logs that can be viewed at http://localhost:18080
 
 ## Scripts, read only
 ./src:/opt/spark/work-dir/src:ro 
@@ -18,8 +18,6 @@ The manual split is done in 'split_data.py' where the data were splitted into 3 
 
 ### command explanation
 docker exec runs a command inside a running container.
--u root runs it as the root user, which is needed to create a folder at /.
-mkdir -p /data creates the /data folder if they don't already exist(-p)
 
 ### To check if the folders were successfully created
 docker exec <container name> ls -ld /data   
