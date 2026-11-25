@@ -1,1 +1,17 @@
+# Virtual environments
+.venv/
 .venv311/
+
+# Dataset (large, downloaded from Kaggle)
+data/**/*.csv
+
+# Docker
+docker-compose.yml
+
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# macOS
+.DS_Store
