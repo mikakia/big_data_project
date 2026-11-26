@@ -5,14 +5,28 @@ from pyspark.ml.feature import StringIndexer, VectorAssembler
 spark = (
     SparkSession.builder
     .appName("galaxy-load-dataset")
-    .config("spark.eventLog.enabled", "true")
-    .config("spark.eventLog.dir", "file:/opt/spark/events")
+    #.config("spark.eventLog.enabled", "true")
+    #.config("spark.eventLog.dir", "file:/opt/spark/events")
     .getOrCreate()
 )
 
 spark.sparkContext.setLogLevel("ERROR")
 
-base = "file:///opt/spark/work-dir/data/"
+base = "file:///opt/spark/work-dir/data/"                                 # for Ieva
+#base = "file:///Users/tsampikakiaourtzi/projects/big_data_project/data/" # for Mika
+
+p1 = spark.read.csv(
+    "file:///Users/tsampikakiaourtzi/projects/big_data_project/data/master/master.csv",
+    header=True,
+    inferSchema=True
+)
+
+print("Number of rows:", p1.count())
+print("Number of columns:", len(p1.columns))
+print("Columns:", p1.columns)
+
+p1.show(10, truncate=False)
+
 
 p1 = spark.read.csv(f"{base}master", header=True, inferSchema=True)
 p2 = spark.read.csv(f"{base}worker1", header=True, inferSchema=True)
@@ -56,5 +70,7 @@ df_filtered = df_filtered.drop('class')
 required_feature = ['u', 'g', 'r', 'i', 'z', 'redshift']
 assembler = VectorAssembler(inputCols=required_feature, outputCol='features')
 transformed_data = assembler.transform(df_filtered)
+transformed_data.show(5)
+
 
 spark.stop()

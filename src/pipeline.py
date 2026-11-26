@@ -1,7 +1,11 @@
-from email.mime import base
+import time
 import warnings
+
+from pyspark.ml import Pipeline
+from pyspark.ml.classification import MultilayerPerceptronClassifier
+from pyspark.ml.evaluation import MulticlassClassificationEvaluator
+from pyspark.ml.feature import StandardScaler, StringIndexer, VectorAssembler
 from pyspark.sql import SparkSession
-from pyspark.ml.feature import StringIndexer, VectorAssembler
 from pyspark.sql import functions as F
 from pyspark.ml.classification import RandomForestClassifier
 
@@ -16,7 +20,9 @@ def create_spark():
     spark.sparkContext.setLogLevel("ERROR")
     return spark
                
-def load_data(spark):                         
+def load_data(spark):
+    #base = "file:///Users/tsampikakiaourtzi/projects/big_data_project/data/"     #for Mika
+                             
     base = "file:///opt/spark/work-dir/data/"
 
     p1 = spark.read.csv(f"{base}master", header=True, inferSchema=True)
@@ -35,7 +41,7 @@ def preprocess(dataset, spark):
         SELECT u, g, r, i, z, redshift, class,
         u - g AS u_g, g - r AS g_r, r - i AS r_i, i - z AS i_z  
         FROM data
-        WHERE u > -100 AND g > -100 AND z > -100""")
+        WHERE u > -100 AND g > -100 AND z > -100""")  # noqa: F541
 
     df_filtered = StringIndexer(
     inputCol='class',
@@ -76,6 +82,48 @@ def random_forest_classifier(train):
 
 
 #def logistic_regression_classifier(train, test):        # Mika
+#def random_forest_classifier(train, test):              # Ieva
+
+def mlp_classifier(train, test):                         # Mika
+   
+    
+    n_classes = train.union(test).select("type").distinct().count()
+
+    scaler = StandardScaler(inputCol="features", outputCol="scaled", withMean=True, withStd=True)
+
+  
+    mlp = MultilayerPerceptronClassifier(featuresCol="scaled", labelCol="type", layers=[6, 16, 8, n_classes],seed=42)
+
+    pipeline = Pipeline(stages=[scaler, mlp])
+
+    # keep training time
+    start = time.time()
+    model = pipeline.fit(train)
+    train_time = time.time() - start
+
+    # predictions
+    preds = model.transform(test)
+
+    # evaluation metrics
+    metrics = {}
+    for metric in ["accuracy", "f1"]:
+        evaluator = MulticlassClassificationEvaluator(
+            labelCol="type", predictionCol="prediction", metricName=metric
+        )
+        metrics[metric] = evaluator.evaluate(preds)
+
+    result = {"model": "MLP (baseline)","accuracy": metrics["accuracy"],"f1": metrics["f1"],"train_time": train_time}
+
+    print(f"Number of classes: {n_classes}")
+    print(f"\n{'Model':<18}{'Accuracy':>10}{'F1':>10}{'Train (s)':>12}")
+    print(f"{result['model']:<18}{result['accuracy']:>10.4f}{result['f1']:>10.4f}{result['train_time']:>12.1f}")
+
+    # confusion matrix 
+    preds.groupBy("type").pivot("prediction").count().orderBy("type").show() # rows = true class, columns = predicted class
+
+    return model, preds, result
+    
+    
 #def evaluate(): 
     
 def main(): 
