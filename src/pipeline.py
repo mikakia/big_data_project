@@ -107,9 +107,7 @@ def mlp_classifier(train, test):                         # Mika
     # evaluation metrics
     metrics = {}
     for metric in ["accuracy", "f1"]:
-        evaluator = MulticlassClassificationEvaluator(
-            labelCol="type", predictionCol="prediction", metricName=metric
-        )
+        evaluator = MulticlassClassificationEvaluator(labelCol="type", predictionCol="prediction", metricName=metric)
         metrics[metric] = evaluator.evaluate(preds)
 
     result = {"model": "MLP (baseline)","accuracy": metrics["accuracy"],"f1": metrics["f1"],"train_time": train_time}
