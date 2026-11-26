@@ -3,6 +3,7 @@ import warnings
 from pyspark.sql import SparkSession
 from pyspark.ml.feature import StringIndexer, VectorAssembler
 from pyspark.sql import functions as F
+from pyspark.ml.classification import RandomForestClassifier
 
 warnings.filterwarnings("ignore")
 
@@ -46,6 +47,8 @@ def preprocess(dataset, spark):
     required_feature = ['u', 'g', 'r', 'i', 'z', 'redshift', 'u_g', 'g_r', 'r_i', 'i_z']
     assembler = VectorAssembler(inputCols=required_feature, outputCol='features')
     transformed_data = assembler.transform(df_filtered)
+
+    # Add an ID as help for later
     transformed_data_id = transformed_data.withColumn("row_id", F.monotonically_increasing_id())
 
     # Fractions per label (stratified sampling)
@@ -65,7 +68,13 @@ def preprocess(dataset, spark):
 
     return train_df, test_df
 
-#def random_forest_classifier(train, test):              # Ieva
+def random_forest_classifier(train): 
+    train_df = train
+    rf = RandomForestClassifier(labelCol="type", featuresCol="features")
+    model = rf.fit(train_df)
+    return model
+
+
 #def logistic_regression_classifier(train, test):        # Mika
 #def evaluate(): 
     
@@ -73,8 +82,7 @@ def main():
     spark = create_spark()
     df = load_data(spark)
     train_df, test_df = preprocess(df, spark)
-    train_df.show(5)
-    test_df.show(5)
+    rf_model = random_forest_classifier(train_df)
 
     spark.stop()
     
