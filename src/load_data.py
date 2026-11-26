@@ -37,6 +37,7 @@ df.createOrReplaceTempView("data")
 
 df_filtered = spark.sql("SELECT u, g, r, i, z, redshift, class FROM data")
 df_filtered.createOrReplaceTempView("filtered")
+spark.sql("SELECT * FROM filtered WHERE u < -100 OR g < -100 OR z < -100").show()
 
 #class_counts = spark.sql("SELECT class, COUNT(class) FROM filtered GROUP BY class")
 #class_counts.show()
@@ -55,8 +56,5 @@ df_filtered = df_filtered.drop('class')
 required_feature = ['u', 'g', 'r', 'i', 'z', 'redshift']
 assembler = VectorAssembler(inputCols=required_feature, outputCol='features')
 transformed_data = assembler.transform(df_filtered)
-
-transformed_data.show(5)
-
 
 spark.stop()
